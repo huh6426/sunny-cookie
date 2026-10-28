@@ -1,0 +1,687 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFF5E1">
+<meta name="description" content="딸기우유 감성의 귀여운 웹 계산기">
+<title>tiny calculator ♡</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🍓</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&family=Jua&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cream: #FFF5E1;
+    --milk: #FFE3EB;
+    --pink: #FFAAC4;
+    --berry: #FF5C8A;
+    --berry-deep: #D93A68;
+    --sky: #CFEBFA;
+    --butter: #FFE680;
+    --cocoa: #6B4455;
+
+    --display: "Jua", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    --digits: "Fredoka", "Jua", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+    --key-h: clamp(56px, 16vw, 70px);
+    --value-h: clamp(54px, 15vw, 64px);
+  }
+
+  * { box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: 36px 16px 40px;
+    overflow-x: hidden;
+    color: var(--cocoa);
+    font-family: var(--display);
+    background-color: var(--cream);
+    background-image:
+      radial-gradient(circle, rgba(255, 170, 196, .38) 2.2px, transparent 2.7px),
+      radial-gradient(circle, rgba(160, 210, 235, .45) 2px, transparent 2.5px);
+    background-size: 30px 30px, 30px 30px;
+    background-position: 0 0, 15px 15px;
+  }
+
+  /* ── 배경 장식 ───────────────────────── */
+  .deco { position: fixed; inset: 0; pointer-events: none; overflow: hidden; z-index: 0; }
+  .deco svg { position: absolute; display: block; }
+  .d1 { width: 30px; top: 9%;  left: 10%;  color: #FF9DBB; transform: rotate(-14deg); }
+  .d2 { width: 36px; top: 15%; right: 11%; color: #F6CF55; transform: rotate(12deg); }
+  .d3 { width: 26px; top: 46%; left: 6%;   color: #8CCBE8; }
+  .d4 { width: 46px; bottom: 13%; left: 11%; color: #FFB3CA; transform: rotate(-10deg); }
+  .d5 { width: 24px; bottom: 24%; right: 8%; color: #8CCBE8; transform: rotate(10deg); }
+  .d6 { width: 30px; bottom: 7%; right: 22%; color: #F6CF55; }
+
+  /* ── 레이아웃 ───────────────────────── */
+  .stage {
+    position: relative;
+    z-index: 1;
+    width: min(100%, 380px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .calc {
+    position: relative;
+    width: 100%;
+    padding: 40px 22px 26px;
+    border-radius: 38px;
+    background: var(--milk);
+    box-shadow:
+      0 0 0 5px #fff,
+      0 5px 0 5px #F8C9D8,
+      0 26px 38px -12px rgba(214, 110, 150, .5);
+  }
+
+  /* 노트 스티치 느낌의 점선 테두리 */
+  .calc::before {
+    content: "";
+    position: absolute;
+    inset: 11px;
+    border: 2px dashed rgba(255, 140, 175, .55);
+    border-radius: 29px;
+    pointer-events: none;
+  }
+
+  .calc > * { position: relative; }
+
+  /* 스티커 */
+  .sticker {
+    position: absolute;
+    display: block;
+    z-index: 3;
+    filter:
+      drop-shadow(2px 0 0 #fff) drop-shadow(-2px 0 0 #fff)
+      drop-shadow(0 2px 0 #fff) drop-shadow(0 -2px 0 #fff)
+      drop-shadow(0 5px 6px rgba(200, 100, 140, .35));
+  }
+  .bow    { width: 98px; top: -34px; left: 50%; transform: translateX(-50%); }
+  .flower { width: 46px; top: -16px; right: -12px; color: var(--pink); transform: rotate(14deg); }
+  .star   { width: 34px; bottom: -14px; left: -10px; color: #F6CF55; transform: rotate(-12deg); }
+
+  /* 마스킹 테이프 */
+  .tape {
+    position: absolute;
+    z-index: 2;
+    width: 74px;
+    height: 24px;
+    background:
+      repeating-linear-gradient(135deg, rgba(255,255,255,.55) 0 6px, transparent 6px 12px),
+      rgba(255, 224, 120, .85);
+    box-shadow: 0 2px 4px rgba(150, 100, 60, .18);
+  }
+  .tape-a { top: 10px; left: -22px; transform: rotate(-38deg); }
+  .tape-b { bottom: 12px; right: -24px; transform: rotate(-38deg); }
+
+  /* ── 헤더 ───────────────────────── */
+  .head {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    margin: 0 0 16px;
+  }
+  .head svg { width: 34px; height: 34px; flex: none; }
+  .head h1 {
+    margin: 0;
+    font-family: var(--display);
+    font-weight: 400;
+    font-size: clamp(22px, 6.6vw, 28px);
+    line-height: 1.1;
+    letter-spacing: .01em;
+    color: var(--berry-deep);
+    text-shadow: 0 2px 0 #fff;
+    white-space: nowrap;
+  }
+
+  /* ── 디스플레이 ───────────────────────── */
+  .screen {
+    position: relative;
+    padding: 12px 18px 12px;
+    border-radius: 24px;
+    border: 3px solid #fff;
+    background:
+      repeating-linear-gradient(0deg, transparent 0 27px, rgba(255, 255, 255, .55) 27px 28px),
+      linear-gradient(180deg, #DDF2FC 0%, #C7E6F7 100%);
+    box-shadow:
+      inset 0 5px 12px rgba(100, 165, 200, .38),
+      0 3px 0 #F4BFD0;
+    text-align: right;
+    overflow: hidden;
+  }
+  .screen.pop { animation: screen-pop .42s cubic-bezier(.3, 1.6, .5, 1); }
+  @keyframes screen-pop {
+    0%   { transform: scale(1); }
+    35%  { transform: scale(1.025, .975); }
+    100% { transform: scale(1); }
+  }
+
+  .screen-deco {
+    position: absolute;
+    top: 10px;
+    left: 12px;
+    display: flex;
+    gap: 3px;
+    color: #F6CF55;
+    pointer-events: none;
+  }
+  .screen-deco svg { width: 14px; height: 14px; display: block; }
+  .screen-deco svg:last-child { color: #FF9DBB; }
+
+  .expr {
+    min-height: 26px;
+    line-height: 26px;
+    font-family: var(--digits);
+    font-weight: 500;
+    font-size: 17px;
+    color: rgba(107, 68, 85, .68);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .expr.is-error { color: var(--berry-deep); font-family: var(--display); font-weight: 400; }
+
+  .value {
+    height: var(--value-h);
+    line-height: var(--value-h);
+    font-family: var(--digits);
+    font-weight: 600;
+    font-size: clamp(42px, 12vw, 54px);
+    color: var(--cocoa);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .value.is-error { color: var(--berry-deep); }
+
+  /* ── 버튼 ───────────────────────── */
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px 13px;
+    margin-top: 22px;
+  }
+
+  .key {
+    --top: #FFF3BD;
+    --base: var(--butter);
+    --lip: #E9BF45;
+    --fg: var(--cocoa);
+
+    position: relative;
+    height: var(--key-h);
+    padding: 0;
+    border: 0;
+    border-radius: 25px;
+    font-family: var(--digits);
+    font-weight: 600;
+    font-size: clamp(22px, 6.4vw, 28px);
+    line-height: 1;
+    color: var(--fg);
+    background: linear-gradient(180deg, var(--top) 0%, var(--base) 100%);
+    box-shadow:
+      0 6px 0 var(--lip),
+      0 13px 16px -5px rgba(190, 90, 125, .38),
+      inset 0 2px 0 rgba(255, 255, 255, .75),
+      inset 0 -6px 10px rgba(255, 255, 255, .22);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+    transition: transform .2s cubic-bezier(.3, 1.9, .5, 1), box-shadow .2s ease, filter .15s ease;
+  }
+
+  /* 젤리 광택 */
+  .key::before {
+    content: "";
+    position: absolute;
+    top: 9%;
+    left: 13%;
+    width: 36%;
+    height: 20%;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .72);
+    transform: rotate(-10deg);
+    pointer-events: none;
+  }
+
+  @media (hover: hover) {
+    .key:hover { filter: brightness(1.04) saturate(1.05); transform: translateY(-1px); }
+  }
+
+  .key:active,
+  .key.is-pressed,
+  .key.is-armed {
+    transform: translateY(5px) scale(1.03, .94);
+    transition-duration: .06s;
+    box-shadow:
+      0 1px 0 var(--lip),
+      0 4px 8px -2px rgba(190, 90, 125, .4),
+      inset 0 2px 0 rgba(255, 255, 255, .6);
+  }
+  /* 계산 대기 중인 연산 버튼: 눌려 있는 채로 하얀 테두리 */
+  .key.is-armed {
+    box-shadow:
+      0 1px 0 var(--lip),
+      0 4px 8px -2px rgba(190, 90, 125, .4),
+      inset 0 0 0 3px #fff;
+  }
+
+  .key:focus-visible { outline: 3px dashed var(--berry-deep); outline-offset: 3px; }
+
+  .k-fn { --top: #E6F6FE; --base: #BDE2F5; --lip: #8CBFDA; font-size: clamp(18px, 5vw, 21px); }
+  .k-op { --top: #FFD3E1; --base: var(--pink); --lip: #E8809F; --fg: #7D2644; font-size: clamp(26px, 7.4vw, 32px); }
+  .k-eq { --top: #FF88AA; --base: var(--berry); --lip: #C93460; --fg: #fff;
+          grid-column: 4; grid-row: 4 / span 2; height: auto; align-self: stretch;
+          font-size: clamp(34px, 9.4vw, 42px); }
+  .k-eq::before { top: 5%; height: 11%; width: 44%; }
+  .k-zero { grid-column: 1 / span 2; }
+
+  /* ── 반짝이 ───────────────────────── */
+  .sparkles { position: absolute; inset: 0; pointer-events: none; z-index: 6; }
+  .sp {
+    position: absolute;
+    line-height: 1;
+    font-size: var(--s);
+    color: var(--c);
+    text-shadow: 0 0 6px rgba(255, 255, 255, .95);
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+    animation: sp 950ms ease-out forwards;
+  }
+  @keyframes sp {
+    0%   { opacity: 0; transform: translate(-50%, -50%) scale(0) rotate(0deg); }
+    28%  { opacity: 1; transform: translate(calc(-50% + var(--dx) * .4), calc(-50% + var(--dy) * .4)) scale(1.25) rotate(35deg); }
+    100% { opacity: 0; transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy))) scale(.4) rotate(110deg); }
+  }
+
+  /* ── 푸터 ───────────────────────── */
+  .foot {
+    margin: 28px 0 0;
+    font-size: 15px;
+    letter-spacing: .05em;
+    color: rgba(107, 68, 85, .62);
+    text-align: center;
+  }
+
+  @media (max-width: 380px) {
+    .calc { padding: 38px 18px 24px; }
+    .keys { gap: 13px 10px; }
+    .flower { right: -8px; }
+    .star { left: -6px; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .key, .screen { transition: none; animation: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- 아이콘 -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-heart" viewBox="0 0 24 24"><path fill="currentColor" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" d="M12 20.5s-8.3-5-8.3-11C3.7 6.5 5.8 4.6 8.2 4.6c1.6 0 3 .8 3.8 2.1.8-1.3 2.2-2.1 3.8-2.1 2.4 0 4.5 1.9 4.5 4.9 0 6-8.3 11-8.3 11z"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M12 3l2.6 5.6 6.1.8-4.5 4.2 1.1 6.1L12 16.7 6.7 19.7l1.1-6.1-4.5-4.2 6.1-.8z"/></symbol>
+  <symbol id="i-sparkle" viewBox="0 0 24 24"><path fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round" d="M12 2c.8 5.6 3.4 8.2 10 10-6.6 1.8-9.2 4.4-10 10-.8-5.6-3.4-8.2-10-10 6.6-1.8 9.2-4.4 10-10z"/></symbol>
+  <symbol id="i-flower" viewBox="0 0 24 24">
+    <g fill="currentColor">
+      <circle cx="12" cy="6.2" r="4.6"/>
+      <circle cx="12" cy="6.2" r="4.6" transform="rotate(72 12 12)"/>
+      <circle cx="12" cy="6.2" r="4.6" transform="rotate(144 12 12)"/>
+      <circle cx="12" cy="6.2" r="4.6" transform="rotate(216 12 12)"/>
+      <circle cx="12" cy="6.2" r="4.6" transform="rotate(288 12 12)"/>
+    </g>
+    <circle cx="12" cy="12" r="3.9" fill="#FFE680"/>
+    <circle cx="10.9" cy="10.9" r="1.1" fill="#fff" opacity=".8"/>
+  </symbol>
+</svg>
+
+<div class="deco" aria-hidden="true">
+  <svg class="d1" viewBox="0 0 24 24"><use href="#i-heart"/></svg>
+  <svg class="d2" viewBox="0 0 24 24"><use href="#i-star"/></svg>
+  <svg class="d3" viewBox="0 0 24 24"><use href="#i-sparkle"/></svg>
+  <svg class="d4" viewBox="0 0 24 24"><use href="#i-flower"/></svg>
+  <svg class="d5" viewBox="0 0 24 24"><use href="#i-heart"/></svg>
+  <svg class="d6" viewBox="0 0 24 24"><use href="#i-sparkle"/></svg>
+</div>
+
+<main class="stage">
+  <section class="calc" id="calc" aria-label="tiny calculator">
+    <span class="tape tape-a" aria-hidden="true"></span>
+    <span class="tape tape-b" aria-hidden="true"></span>
+
+    <!-- 리본 -->
+    <svg class="sticker bow" viewBox="0 0 120 64" aria-hidden="true">
+      <path d="M54 38 40 62l12-4 6-14z" fill="#FF7BA3"/>
+      <path d="M66 38 80 62l-12-4-6-14z" fill="#FF7BA3"/>
+      <path d="M60 32C44 4 6 6 8 30c2 24 36 26 52 2z" fill="#FF9DBB" stroke="#F2759E" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M60 32C76 4 114 6 112 30c-2 24-36 26-52 2z" fill="#FF9DBB" stroke="#F2759E" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M54 30C44 15 24 14 17 27" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".65"/>
+      <path d="M66 30C76 15 96 14 103 27" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".65"/>
+      <ellipse cx="60" cy="32" rx="10" ry="11" fill="#FF5C8A"/>
+      <ellipse cx="57" cy="28" rx="3" ry="4" fill="#fff" opacity=".55"/>
+    </svg>
+
+    <!-- 꽃 / 별 스티커 -->
+    <svg class="sticker flower" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-flower"/></svg>
+    <svg class="sticker star" viewBox="0 0 24 24" aria-hidden="true"><use href="#i-star"/></svg>
+
+    <header class="head">
+      <!-- 딸기 -->
+      <svg viewBox="0 0 40 40" aria-hidden="true">
+        <path d="M20 12C10 10 5 18 8 26c3 8 9 11 12 11s9-3 12-11c3-8-2-16-12-14z" fill="#FF6B93"/>
+        <path d="M12 17c1-3 3-4 5-4" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".55"/>
+        <path d="M20 14c-4-1-8 0-9-4 4-1 7 1 9 4zM20 14c4-1 8 0 9-4-4-1-7 1-9 4zM20 14c-1-3 0-6 0-8 1 2 1 5 0 8z" fill="#8FD39C"/>
+        <g fill="#FFF0C9">
+          <ellipse cx="15" cy="22" rx="1" ry="1.5"/><ellipse cx="22" cy="21" rx="1" ry="1.5"/>
+          <ellipse cx="26" cy="27" rx="1" ry="1.5"/><ellipse cx="18" cy="28" rx="1" ry="1.5"/>
+          <ellipse cx="22" cy="32" rx="1" ry="1.5"/><ellipse cx="13" cy="29" rx="1" ry="1.5"/>
+        </g>
+      </svg>
+      <h1>tiny calculator <span style="color:var(--berry)">♡</span></h1>
+    </header>
+
+    <div class="screen" id="screen">
+      <div class="screen-deco" aria-hidden="true">
+        <svg viewBox="0 0 24 24"><use href="#i-star"/></svg>
+        <svg viewBox="0 0 24 24"><use href="#i-heart"/></svg>
+      </div>
+      <div class="expr" id="expr"></div>
+      <div class="value" id="value" role="status" aria-live="polite" aria-atomic="true">0</div>
+    </div>
+
+    <div class="keys" id="keys">
+      <button class="key k-fn" data-key="ac" aria-label="전체 지우기">AC</button>
+      <button class="key k-fn" data-key="del" aria-label="마지막 숫자 지우기">DEL</button>
+      <button class="key k-op" data-key="/" aria-label="나누기">÷</button>
+      <button class="key k-op" data-key="*" aria-label="곱하기">×</button>
+
+      <button class="key k-num" data-key="7">7</button>
+      <button class="key k-num" data-key="8">8</button>
+      <button class="key k-num" data-key="9">9</button>
+      <button class="key k-op" data-key="-" aria-label="빼기">−</button>
+
+      <button class="key k-num" data-key="4">4</button>
+      <button class="key k-num" data-key="5">5</button>
+      <button class="key k-num" data-key="6">6</button>
+      <button class="key k-op" data-key="+" aria-label="더하기">+</button>
+
+      <button class="key k-num" data-key="1">1</button>
+      <button class="key k-num" data-key="2">2</button>
+      <button class="key k-num" data-key="3">3</button>
+
+      <button class="key k-num k-zero" data-key="0">0</button>
+      <button class="key k-num" data-key="." aria-label="소수점">.</button>
+
+      <button class="key k-eq" data-key="=" aria-label="계산하기">=</button>
+    </div>
+
+    <div class="sparkles" id="sparkles" aria-hidden="true"></div>
+  </section>
+
+  <p class="foot">made with love ⋆౨ৎ˚⟡˖</p>
+</main>
+
+<script>
+'use strict';
+
+/* ── 상수 & 요소 ───────────────────────── */
+const OPS = { '+': '+', '-': '\u2212', '*': '\u00d7', '/': '\u00f7' };
+const MAX_DIGITS = 15;
+
+const els = {
+  screen:   document.getElementById('screen'),
+  expr:     document.getElementById('expr'),
+  value:    document.getElementById('value'),
+  keys:     document.getElementById('keys'),
+  sparkles: document.getElementById('sparkles')
+};
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+/* ── 상태 ───────────────────────── */
+function freshState() {
+  return {
+    cur: '0',      // 지금 입력 중인(또는 결과) 숫자 문자열
+    prev: null,    // 연산 대기 중인 앞 숫자
+    op: null,      // 대기 중인 연산자
+    fresh: false,  // 연산자를 막 눌러서 새 숫자를 기다리는 중
+    done: false,   // = 로 결과를 막 보여준 상태
+    error: '',     // 오류 메시지
+    expr: ''       // 위쪽 작은 수식
+  };
+}
+let state = freshState();
+
+/* ── 숫자 도우미 ───────────────────────── */
+function clean(n) {
+  return isFinite(n) ? parseFloat(n.toPrecision(15)) : n;   // 0.1+0.2 같은 부동소수점 찌꺼기 제거
+}
+
+function toStr(n) {
+  if (!isFinite(n)) return null;
+  const abs = Math.abs(n);
+  if (abs >= 1e15 || (abs > 0 && abs < 1e-6)) {
+    return n.toExponential(6).replace(/\.?0+e/, 'e');
+  }
+  return String(n);
+}
+
+function digitCount(s) {
+  return s.replace(/[-.]/g, '').length;
+}
+
+function pretty(s) {
+  if (/e/i.test(s)) return s;
+  const neg = s.charAt(0) === '-';
+  if (neg) s = s.slice(1);
+  const parts = s.split('.');
+  const grouped = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return (neg ? '\u2212' : '') + grouped + (parts.length > 1 ? '.' + parts[1] : '');
+}
+
+function evaluate(a, op, b) {
+  if (op === '/' && b === 0) return { err: '0으로 나눌 수 없어요' };
+  let r;
+  switch (op) {
+    case '+': r = a + b; break;
+    case '-': r = a - b; break;
+    case '*': r = a * b; break;
+    case '/': r = a / b; break;
+  }
+  const s = toStr(clean(r));
+  if (s === null) return { err: '숫자가 너무 커요' };
+  return { str: s };
+}
+
+/* ── 입력 처리 ───────────────────────── */
+function inputDigit(d) {
+  if (state.done) state = freshState();
+  if (state.fresh) {
+    state.cur = d;
+    state.fresh = false;
+  } else {
+    if (digitCount(state.cur) >= MAX_DIGITS) return;
+    state.cur = state.cur === '0' ? d : state.cur + d;
+  }
+}
+
+function inputDot() {
+  if (state.done) state = freshState();
+  if (state.fresh) {
+    state.cur = '0.';
+    state.fresh = false;
+    return;
+  }
+  if (state.cur.indexOf('.') !== -1 || digitCount(state.cur) >= MAX_DIGITS) return;
+  state.cur += '.';
+}
+
+function inputOp(op) {
+  if (state.op && !state.fresh) {
+    // 연속 계산: 앞의 계산을 먼저 끝낸다
+    const r = evaluate(state.prev, state.op, parseFloat(state.cur));
+    if (r.err) { state.error = r.err; return; }
+    state.prev = parseFloat(r.str);
+    state.cur = r.str;
+  } else if (!state.op) {
+    state.prev = parseFloat(state.cur);
+    state.cur = toStr(state.prev);
+  }
+  state.op = op;
+  state.fresh = true;
+  state.done = false;
+  state.expr = pretty(state.cur) + ' ' + OPS[op];
+}
+
+function inputEquals() {
+  if (!state.op) return false;
+  const a = state.prev;
+  const b = parseFloat(state.cur);
+  const r = evaluate(a, state.op, b);
+  if (r.err) { state.error = r.err; return false; }
+  state.expr = pretty(toStr(a)) + ' ' + OPS[state.op] + ' ' + pretty(toStr(b)) + ' =';
+  state.cur = r.str;
+  state.prev = null;
+  state.op = null;
+  state.fresh = false;
+  state.done = true;
+  return true;
+}
+
+function inputDelete() {
+  if (state.done) { state = freshState(); return; }
+  if (state.fresh) return;
+  state.cur = state.cur.slice(0, -1);
+  if (state.cur === '' || state.cur === '-') state.cur = '0';
+}
+
+function press(key) {
+  if (state.error) {
+    const isInput = /^[0-9.]$/.test(key);
+    state = freshState();
+    if (!isInput) { render(); return; }
+  }
+
+  let celebrated = false;
+  if (/^[0-9]$/.test(key))      inputDigit(key);
+  else if (key === '.')         inputDot();
+  else if (OPS[key])            inputOp(key);
+  else if (key === '=')         celebrated = inputEquals();
+  else if (key === 'del')       inputDelete();
+  else if (key === 'ac')        state = freshState();
+
+  if (state.error) { state = Object.assign(freshState(), { error: state.error }); }
+  render();
+  if (celebrated) celebrate();
+}
+
+/* ── 화면 그리기 ───────────────────────── */
+function fit(el, min) {
+  el.style.fontSize = '';
+  let size = parseFloat(getComputedStyle(el).fontSize);
+  while (el.scrollWidth > el.clientWidth && size > min) {
+    size -= 1.5;
+    el.style.fontSize = size + 'px';
+  }
+}
+
+function render() {
+  const err = !!state.error;
+  els.value.textContent = err ? 'Error' : pretty(state.cur);
+  els.expr.textContent  = err ? state.error : state.expr;
+  els.value.classList.toggle('is-error', err);
+  els.expr.classList.toggle('is-error', err);
+
+  els.keys.querySelectorAll('.k-op').forEach(function (btn) {
+    btn.classList.toggle('is-armed', !err && state.fresh && btn.dataset.key === state.op);
+  });
+
+  fit(els.value, 20);
+  fit(els.expr, 11);
+}
+
+/* ── 반짝이 ───────────────────────── */
+function celebrate() {
+  if (reduceMotion.matches) return;
+
+  els.screen.classList.remove('pop');
+  void els.screen.offsetWidth;
+  els.screen.classList.add('pop');
+
+  const s = els.screen;
+  const cx = s.offsetLeft + s.offsetWidth / 2;
+  const cy = s.offsetTop + s.offsetHeight / 2;
+  const rx = s.offsetWidth / 2;
+  const ry = s.offsetHeight / 2;
+  const glyphs = ['\u2726', '\u2727', '\u2661', '\u22c6', '\u2726', '\u2661'];
+  const colors = ['#FF5C8A', '#F0C94F', '#7FC3E3', '#FF8FB1', '#F6B93B'];
+
+  for (let i = 0; i < 12; i++) {
+    const a = Math.random() * Math.PI * 2;
+    const k = 1.0 + Math.random() * 0.22;
+    const dist = 10 + Math.random() * 22;
+    const sp = document.createElement('span');
+    sp.className = 'sp';
+    sp.textContent = glyphs[i % glyphs.length];
+    sp.style.left = (cx + Math.cos(a) * rx * k) + 'px';
+    sp.style.top  = (cy + Math.sin(a) * ry * k) + 'px';
+    sp.style.setProperty('--s', (12 + Math.random() * 13) + 'px');
+    sp.style.setProperty('--c', colors[Math.floor(Math.random() * colors.length)]);
+    sp.style.setProperty('--dx', (Math.cos(a) * dist) + 'px');
+    sp.style.setProperty('--dy', (Math.sin(a) * dist - 8) + 'px');
+    sp.style.animationDelay = (Math.random() * 160) + 'ms';
+    sp.addEventListener('animationend', function () { sp.remove(); });
+    els.sparkles.appendChild(sp);
+  }
+}
+
+/* ── 마우스 / 터치 ───────────────────────── */
+els.keys.addEventListener('click', function (e) {
+  const btn = e.target.closest('button[data-key]');
+  if (btn) press(btn.dataset.key);
+});
+
+/* ── 키보드 ───────────────────────── */
+function mapKey(e) {
+  const k = e.key;
+  if (/^[0-9]$/.test(k)) return k;
+  if (k === '.' || k === ',') return '.';
+  if (k === '+' || k === '-' || k === '*' || k === '/') return k;
+  if (k === 'x' || k === 'X') return '*';
+  if (k === 'Enter' || k === '=') return '=';
+  if (k === 'Backspace') return 'del';
+  if (k === 'Escape' || k === 'Delete' || k === 'c' || k === 'C') return 'ac';
+  return null;
+}
+
+document.addEventListener('keydown', function (e) {
+  if (e.ctrlKey || e.metaKey || e.altKey) return;
+  const key = mapKey(e);
+  if (!key) return;
+  e.preventDefault();               // Enter가 포커스된 버튼을 또 누르거나, / 가 빠른 검색을 여는 것을 막음
+  if (e.repeat && key !== 'del') return;
+  press(key);
+
+  const btn = els.keys.querySelector('[data-key="' + key + '"]');
+  if (btn) {
+    btn.classList.add('is-pressed');
+    setTimeout(function () { btn.classList.remove('is-pressed'); }, 130);
+  }
+});
+
+/* ── 시작 ───────────────────────── */
+render();
+window.addEventListener('resize', render);
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(render);
+</script>
+</body>
+</html>
